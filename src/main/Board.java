@@ -23,20 +23,20 @@ public class Board extends JPanel {
         pieceList.add(new Knight(this,6,0,1));
         pieceList.add(new Knight(this,6,7,0));
         pieceList.add(new Bishop(this, 2,0,1));
-            // Black pieces (top of the board)
-            // Rooks
+        // Black pieces (top of the board)
+        // Rooks
         pieceList.add(new Rook(this, 0, 0, 1));
         pieceList.add(new Rook(this, 7, 0, 1));
 
-            // Knights
+        // Knights
         pieceList.add(new Knight(this, 1, 0, 1));
         pieceList.add(new Knight(this, 6, 0, 1));
 
-            // Bishops
+        // Bishops
         pieceList.add(new Bishop(this, 2, 0, 1));
         pieceList.add(new Bishop(this, 5, 0, 1));
 
-            // Queen & King
+        // Queen & King
         pieceList.add(new Queen(this, 3, 0, 1));
         pieceList.add(new King(this, 4, 0, 1));
 
