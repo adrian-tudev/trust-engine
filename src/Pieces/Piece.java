@@ -42,4 +42,12 @@ public class Piece {
     public void paint(Graphics graphics) {
        graphics.drawImage(image, x, y, null);
     }
+
+    public boolean isValidPieceMove(int newCol, int newRow) {
+        return true;
+    }
+    public boolean checkForCollision(int newCol, int newRow) {
+        return false;
+    }
+
 }

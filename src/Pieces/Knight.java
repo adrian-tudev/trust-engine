@@ -20,4 +20,13 @@ public class Knight extends Piece {
             image = getImage("/resources/Chess_ndt60.png");
         }
     }
+
+    @Override
+    public boolean isValidPieceMove(int newCol, int newRow) {
+        int colDiff = Math.abs(newCol - this.col);
+        int rowDiff = Math.abs(newRow - this.row);
+
+        // L SHAPE
+        return (colDiff == 2 && rowDiff == 1) || (colDiff == 1 && rowDiff == 2);
+    }
 }

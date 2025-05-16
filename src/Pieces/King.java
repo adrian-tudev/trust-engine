@@ -19,5 +19,13 @@ public class King extends Piece {
         else {
             image = getImage("/resources/Chess_kdt60.png");
         }
+
+    }
+    @Override
+    public boolean isValidPieceMove(int newCol, int newRow) {
+        int diffCol = Math.abs(newCol - this.col);
+        int diffRow = Math.abs(newRow - this.row);
+        return (diffRow == 1 && diffCol == 1) || (diffRow == 0 && diffCol == 1)
+                || (diffRow == 1 && diffCol == 0);
     }
 }
