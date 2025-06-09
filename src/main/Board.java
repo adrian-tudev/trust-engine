@@ -8,12 +8,13 @@ import java.util.ArrayList;
 
 public class Board extends JPanel {
     public static final int SQUARE_SIZE = 60;
-    private static final int MAX_ROWS = 8;
-    private static final int MAX_COLS = 8;
+    public static final int MAX_ROWS = 8;
+    public static final int MAX_COLS = 8;
 
-    static ArrayList<Piece> pieceList = new ArrayList<>();
+    public static ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
     public int colorToMove = 0;
+    public Scanner scanner = new Scanner(this);
 
     public Board() {
         addPieces();
@@ -35,9 +36,47 @@ public class Board extends JPanel {
         pieceList.remove(move.capture);
     }
 
+    public void castling(Move move) {
+        if (move.newCol == 2) {
+            Piece rook = getPiece(0,move.row);
+            Move rookMove = new Move(this, rook, 3,move.row);
+            makeMove(rookMove);
+        }
+        else {
+            Piece rook = getPiece(7, move.row);
+            Move rookMove = new Move(this, rook, 5, move.row);
+            makeMove(rookMove);
+        }
+        colorToMove ^= 1;
+    }
+
+    public void enPassant(Move move) {
+        int squareDiff;
+        if (move.piece.color == 0)
+            squareDiff = 1;
+        else
+            squareDiff = -1;
+
+        Piece pawn = getPiece(move.newCol, move.newRow + squareDiff);
+
+        pieceList.remove(pawn);
+    }
+
+    public void firstMove(Piece piece) {
+        piece.isFirstMove = false;
+    }
+
     public void makeMove(Move move) {
-        if (move.piece.name.equals("Pawn"))
-            ((Pawn) move.piece).isFirstMove = false;
+        if (move.piece.name.equals("Pawn") || move.piece.name.equals("King") || move.piece.name.equals("Rook"))
+            firstMove(move.piece);
+        if (move.piece.name.equals("King") && Math.abs(move.piece.col - move.newCol) == 2)
+            castling(move);
+        if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2)
+            scanner.enPassantPossible(move.piece);
+        else
+            scanner.enPassantEnable = false;
+        if (move.piece.name.equals("Pawn") && move.newCol == scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1)
+            enPassant(move);
 
         move.piece.col = move.newCol;
         move.piece.row = move.newRow;
@@ -57,19 +96,7 @@ public class Board extends JPanel {
     }
 
     public boolean isValidMove(Move move) {
-        if (checkTeam(move.piece, move.capture))
-            return false;
-
-        else if (!(move.piece.color == colorToMove))
-            return false;
-
-        else if (!(move.piece.isValidPieceMove(move.newCol, move.newRow)))
-            return false;
-
-        else if (move.piece.checkForCollision(move.newCol, move.newRow))
-            return false;
-
-        return true;
+        return scanner.isValidMove(move);
     }
 
     public void addPieces() {
@@ -116,7 +143,7 @@ public class Board extends JPanel {
         for (int i = 0; i < 8; i++) {
             pieceList.add(new Pawn(this, i, 6, 0));
         }
-    };
+    }
 
     @Override
     public void paintComponent(Graphics graphics) {
@@ -148,6 +175,11 @@ public class Board extends JPanel {
             piece.paint(graphics);
         }
 
+        if (scanner.scanCheckMate(colorToMove)) {
+            graphics.setColor(Color.BLACK);
+            graphics.setFont(new Font("Arial", Font.BOLD, 50));
+            graphics.drawString(((colorToMove == 0) ? "Black" : "White" ) + " wins!", 100, MAX_ROWS * SQUARE_SIZE / 2);
+        }
 
     }
 

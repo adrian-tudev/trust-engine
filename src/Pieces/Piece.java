@@ -13,6 +13,7 @@ public class Piece {
     public int x, y;
     public int row, col;
     public String name;
+    public boolean isFirstMove = true;
 
     Board board;
 

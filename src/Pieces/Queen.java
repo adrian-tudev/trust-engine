@@ -49,31 +49,17 @@ public class Queen extends Piece {
         }
         // CHECK STRAIGHT
         else if (this.col == newCol || this.row == newRow) {
-            if (newRow < this.row) {
-                for (int i = this.row - 1; i > newRow; i--) {
-                    if (board.getPiece(this.col, i) != null)
-                        return true;
-                }
-            }
-            // down
-            if (newRow > this.row) {
-                for (int i = this.row + 1; i < newRow; i++) {
-                    if (board.getPiece(this.col, i) != null)
-                        return true;
-                }
-            }
-            // left
-            if (newCol < this.col) {
-                for (int i = this.col - 1; i > newCol; i--) {
-                    if (board.getPiece(i, this.row) != null)
-                        return true;
-                }
-            }
-            if (newCol > this.col) {
-                for (int i = this.col + 1; i < newCol; i++) {
-                    if (board.getPiece(i, this.row) != null)
-                        return true;
-                }
+            int colDirection = Integer.compare(newCol - this.col, 0);
+            int rowDirection = Integer.compare(newRow - this.row, 0);
+
+            int currentCol = this.col + colDirection;
+            int currentRow = this.row + rowDirection;
+
+            while (currentCol != newCol || currentRow != newRow) {
+                if (board.getPiece(currentCol, currentRow) != null)
+                    return true;
+                currentCol += colDirection;
+                currentRow += rowDirection;
             }
         }
         return false;
