@@ -11,18 +11,23 @@ public class Board extends JPanel {
     public static final int MAX_ROWS = 8;
     public static final int MAX_COLS = 8;
 
+    public String FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    public String FENTest = "r3k2r/1P6/8/8/8/8/8/R3K2R";
+
     public static ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
     public int colorToMove = 0;
     public Scanner scanner = new Scanner(this);
 
+
     public Board() {
-        addPieces();
+        addPieces(FENTest);
 
         Input input = new Input(this);
         this.addMouseListener(input);
         this.addMouseMotionListener(input);
     }
+
 
     public Piece getPiece(int col, int row) {
        for (Piece piece : pieceList) {
@@ -32,9 +37,43 @@ public class Board extends JPanel {
        } return null;
     }
 
+
     public void capture(Move move) {
         pieceList.remove(move.capture);
     }
+
+
+    public void promotion(Move move) {
+        Piece pawn = getPiece(move.col,move.row);
+        pieceList.remove(pawn);
+
+        // simple popup choice
+        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                "Choose promotion piece:",
+                "Pawn Promotion",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        Piece promotedPiece = createPromotedPiece(choice, move.newCol, move.newRow, move.piece.color);
+        pieceList.add(promotedPiece);
+    }
+
+
+    public Piece createPromotedPiece(int choice, int col, int row, int color) {
+        return switch (choice) {
+            case 1 -> new Rook(this, col, row, color);
+            case 2 -> new Bishop(this, col, row, color);
+            case 3 -> new Knight(this, col, row, color);
+            default -> new Queen(this, col, row, color);
+        };
+    }
+
 
     public void castling(Move move) {
         if (move.newCol == 2) {
@@ -50,6 +89,7 @@ public class Board extends JPanel {
         colorToMove ^= 1;
     }
 
+
     public void enPassant(Move move) {
         int squareDiff;
         if (move.piece.color == 0)
@@ -62,29 +102,72 @@ public class Board extends JPanel {
         pieceList.remove(pawn);
     }
 
+
     public void firstMove(Piece piece) {
         piece.isFirstMove = false;
     }
 
+
     public void makeMove(Move move) {
-        if (move.piece.name.equals("Pawn") || move.piece.name.equals("King") || move.piece.name.equals("Rook"))
-            firstMove(move.piece);
-        if (move.piece.name.equals("King") && Math.abs(move.piece.col - move.newCol) == 2)
+        handleFirstMove(move.piece);
+
+        handleSpecialMoves(move);
+
+        executeMove(move);
+
+        capture(move);
+
+        colorToMove = colorToMove ^ 1;
+    }
+
+
+    public void handleFirstMove(Piece piece) {
+        if (piece.name.equals("Pawn") || piece.name.equals("King") || piece.name.equals("Rook"))
+            firstMove(piece);
+    }
+
+
+    public void handleSpecialMoves(Move move) {
+        // Castling
+        if (move.piece.name.equals("King") && Math.abs(move.piece.col - move.newCol) == 2) {
             castling(move);
+            return;
+        }
+
+        // Setup en passant
         if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2)
             scanner.enPassantPossible(move.piece);
         else
             scanner.enPassantEnable = false;
-        if (move.piece.name.equals("Pawn") && move.newCol == scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1)
+
+        if (isEnPassant(move))
             enPassant(move);
 
+        if (isPawnPromotion(move)) {
+            promotion(move);
+        }
+    }
+
+
+    public boolean isEnPassant(Move move) {
+        return (move.piece.name.equals("Pawn") && move.newCol ==
+                scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1);
+    }
+
+
+    public boolean isPawnPromotion(Move move) {
+        return move.piece.name.equals("Pawn") &&
+                (move.newRow == 0 || move.newRow == 7);
+    }
+
+
+    public void executeMove(Move move) {
         move.piece.col = move.newCol;
         move.piece.row = move.newRow;
         move.piece.x = move.newCol * SQUARE_SIZE;
         move.piece.y = move.newRow * SQUARE_SIZE;
-        capture(move);
-        colorToMove = colorToMove ^ 1;
     }
+
 
     public boolean checkTeam(Piece p1, Piece p2) {
         if (p1 == null || p2 == null) {
@@ -95,55 +178,59 @@ public class Board extends JPanel {
         }
     }
 
+
     public boolean isValidMove(Move move) {
         return scanner.isValidMove(move);
     }
 
-    public void addPieces() {
-        // Black pieces
-        // Rooks
-        pieceList.add(new Rook(this, 0, 0, 1));
-        pieceList.add(new Rook(this, 7, 0, 1));
 
-        // Knights
-        pieceList.add(new Knight(this, 1, 0, 1));
-        pieceList.add(new Knight(this, 6, 0, 1));
+    // load position from FEN string
+    public void addPieces(String FEN) {
+        pieceList.clear();
+        int row = 0;
+        int col = 0;
+        int color;
+        for (int i = 0; i < FEN.length(); i++) {
+            char ch = FEN.charAt(i);
+            if (ch == '/') {
+                row++;
+                col = 0;
+            }
+            else if (Character.isDigit(ch)) {
+                col += Character.getNumericValue(ch);
+            }
+            else {
+                if (Character.isUpperCase(ch)) {
+                    color = 0;
+                }
+                else color = 1;
+                char piece = Character.toLowerCase(ch);
 
-        // Bishops
-        pieceList.add(new Bishop(this, 2, 0, 1));
-        pieceList.add(new Bishop(this, 5, 0, 1));
-
-        // Queen & King
-        pieceList.add(new Queen(this, 3, 0, 1));
-        pieceList.add(new King(this, 4, 0, 1));
-
-        // Black Pawns
-        for (int i = 0; i < 8; i++) {
-            pieceList.add(new Pawn(this, i, 1, 1));
-        }
-
-        // White pieces
-        // Rooks
-        pieceList.add(new Rook(this, 0, 7, 0));
-        pieceList.add(new Rook(this, 7, 7, 0));
-
-        // Knights
-        pieceList.add(new Knight(this, 1, 7, 0));
-        pieceList.add(new Knight(this, 6, 7, 0));
-
-        // Bishops
-        pieceList.add(new Bishop(this, 2, 7, 0));
-        pieceList.add(new Bishop(this, 5, 7, 0));
-
-        // Queen & King
-        pieceList.add(new Queen(this, 3, 7, 0));
-        pieceList.add(new King(this, 4, 7, 0));
-
-        // White Pawns
-        for (int i = 0; i < 8; i++) {
-            pieceList.add(new Pawn(this, i, 6, 0));
+                switch (piece) {
+                    case 'r':
+                        pieceList.add(new Rook(this,col,row,color));
+                        break;
+                    case 'n':
+                        pieceList.add(new Knight(this,col,row,color));
+                        break;
+                    case 'b':
+                        pieceList.add(new Bishop(this,col,row,color));
+                        break;
+                    case 'q':
+                        pieceList.add(new Queen(this,col,row,color));
+                        break;
+                    case 'k':
+                        pieceList.add(new King(this,col,row,color));
+                        break;
+                    case 'p':
+                        pieceList.add(new Pawn(this,col,row,color));
+                        break;
+                }
+                col++;
+            }
         }
     }
+
 
     @Override
     public void paintComponent(Graphics graphics) {
@@ -182,6 +269,7 @@ public class Board extends JPanel {
         }
 
     }
+
 
     public void display() {
             JFrame frame = new JFrame("Chess Board");
