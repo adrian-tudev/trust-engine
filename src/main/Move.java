@@ -5,6 +5,7 @@ import Pieces.Piece;
 public class Move {
     int col, row;
     int newCol, newRow;
+    public int oldColorToMove;
 
     Piece piece;
     Piece capture;
