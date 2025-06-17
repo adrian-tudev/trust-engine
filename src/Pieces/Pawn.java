@@ -46,7 +46,8 @@ public class Pawn extends Piece {
             return true;
         }
         // Push pawn 2 squares if first move
-        if (this.isFirstMove && newRow == row + squareDiff * 2 && newCol == this.col) {
+        if (this.isFirstMove && newRow == row + squareDiff * 2 && newCol == this.col
+                && board.getPiece(col, row + squareDiff) == null) {
             return true;
         }
         // Diagonal captures

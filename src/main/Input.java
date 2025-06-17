@@ -39,7 +39,7 @@ public class Input extends MouseAdapter {
           Move move = new Move(board, board.selectedPiece, col, row);
 
           if (board.isValidMove(move)) {
-              board.makeMove(move);
+              board.makeMove(move, false);
           }
           else {
               board.selectedPiece.x = board.selectedPiece.col * SQUARE_SIZE;

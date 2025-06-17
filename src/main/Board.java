@@ -19,9 +19,13 @@ public class Board extends JPanel {
     public int colorToMove = 0;
     public Scanner scanner = new Scanner(this);
 
+    AI ai = new AI(this);
+
+    public boolean isAIThinking = false;
+
 
     public Board() {
-        addPieces(FENTest);
+        addPieces(FEN);
 
         Input input = new Input(this);
         this.addMouseListener(input);
@@ -79,12 +83,12 @@ public class Board extends JPanel {
         if (move.newCol == 2) {
             Piece rook = getPiece(0,move.row);
             Move rookMove = new Move(this, rook, 3,move.row);
-            makeMove(rookMove);
+            makeMove(rookMove, false);
         }
         else {
             Piece rook = getPiece(7, move.row);
             Move rookMove = new Move(this, rook, 5, move.row);
-            makeMove(rookMove);
+            makeMove(rookMove, false);
         }
         colorToMove ^= 1;
     }
@@ -108,16 +112,55 @@ public class Board extends JPanel {
     }
 
 
-    public void makeMove(Move move) {
+    public Move makeMove(Move move, boolean simulate) {
+        Move undoInfo = new Move(this, move.piece, move.piece.col, move.piece.row);
+        undoInfo.capture = move.capture;
+        undoInfo.oldColorToMove = colorToMove;
+
         handleFirstMove(move.piece);
-
         handleSpecialMoves(move);
-
         executeMove(move);
-
         capture(move);
 
+        selectedPiece = null;
+
         colorToMove = colorToMove ^ 1;
+
+        if (!isAIThinking && !simulate)
+            aiMove();
+
+        return undoInfo;
+    }
+
+    public void undoMove(Move undoInfo) {
+        // Restore piece position
+        undoInfo.piece.col = undoInfo.newCol;
+        undoInfo.piece.row = undoInfo.newRow;
+        undoInfo.piece.x = undoInfo.newCol * SQUARE_SIZE;
+        undoInfo.piece.y = undoInfo.newRow * SQUARE_SIZE;
+
+        // Restore captured piece if any
+        if (undoInfo.capture != null) {
+            pieceList.add(undoInfo.capture);
+        }
+
+        // Restore color to move
+        colorToMove = undoInfo.oldColorToMove;
+    }
+
+
+    public void aiMove() {
+        if (colorToMove == 1 && !(scanner.scanCheckMate(1))) {
+            isAIThinking = true;
+
+            Timer timer = new Timer(500, e -> {
+                ai.makeAIMove();
+                isAIThinking = false;
+                repaint();
+            });
+            timer.setRepeats(false);
+            timer.start();
+        }
     }
 
 
@@ -181,6 +224,15 @@ public class Board extends JPanel {
 
     public boolean isValidMove(Move move) {
         return scanner.isValidMove(move);
+    }
+
+    public int countPieces(int color, String name) {
+        int count = 0;
+        for (Piece piece : pieceList) {
+            if (piece.name.equals(name) && piece.color == color)
+                count++;
+        }
+        return count;
     }
 
 

@@ -10,7 +10,7 @@ public class Bishop extends Piece {
         this.x = getX(col);
         this.y = getY(row);
         this.color = color;
-        this.name = "Knight";
+        this.name = "Bishop";
 
 
         if (color == 0) {
