@@ -31,12 +31,12 @@ public class Pawn extends Piece {
 
         // En Passant logic
         if (this.row == 3 && board.scanner.enPassantEnable && this.color == 0) {
-            if (newCol == board.scanner.enPassantCol && newRow == this.row - 1 && Math.abs(newCol - col) == 1) {
+            if (newCol == board.scanner.enPassantCol && row == board.scanner.enPassantRow && newRow == this.row - 1 && Math.abs(newCol - col) == 1) {
                 return true;
             }
         }
         if (this.row == 4 && board.scanner.enPassantEnable && this.color == 1) {
-            if (newCol == board.scanner.enPassantCol && newRow == this.row + 1 && Math.abs(newCol - col) == 1) {
+            if (newCol == board.scanner.enPassantCol && row == board.scanner.enPassantRow && newRow == this.row + 1 && Math.abs(newCol - col) == 1) {
                 return true;
             }
         }

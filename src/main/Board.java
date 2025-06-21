@@ -12,7 +12,9 @@ public class Board extends JPanel {
     public static final int MAX_COLS = 8;
 
     public String FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    public String FENTest = "r3k2r/1P6/8/8/8/8/8/R3K2R";
+    public String FENPROMOTION = "8/P7/8/8/8/8/8/k6K";
+    public String FENENPASSANT = "8/3p4/8/4P3/8/8/8/K1k5";
+    public String FENCASTLING = "";
 
     public static ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
@@ -25,7 +27,7 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(FEN);
+        addPieces(FENENPASSANT);
 
         Input input = new Input(this);
         this.addMouseListener(input);
@@ -47,25 +49,32 @@ public class Board extends JPanel {
     }
 
 
-    public void promotion(Move move) {
+    public void promotion(Move move, boolean simulate) {
         Piece pawn = getPiece(move.col,move.row);
         pieceList.remove(pawn);
 
         // simple popup choice
-        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
-        int choice = JOptionPane.showOptionDialog(
-                this,
-                "Choose promotion piece:",
-                "Pawn Promotion",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]
-        );
+        if (simulate || isAIThinking) {
+            Piece promotedPiece = new Queen(this, move.newCol, move.newRow, move.piece.color);
+            pieceList.add(promotedPiece);
+        }
+        else {
+            String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+            int choice = JOptionPane.showOptionDialog(
+                    this,
+                    "Choose promotion piece:",
+                    "Pawn Promotion",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0]
+            );
+            Piece promotedPiece = createPromotedPiece(choice, move.newCol, move.newRow, move.piece.color);
+            pieceList.add(promotedPiece);
+        }
 
-        Piece promotedPiece = createPromotedPiece(choice, move.newCol, move.newRow, move.piece.color);
-        pieceList.add(promotedPiece);
+
     }
 
 
@@ -81,16 +90,24 @@ public class Board extends JPanel {
 
     public void castling(Move move) {
         if (move.newCol == 2) {
-            Piece rook = getPiece(0,move.row);
-            Move rookMove = new Move(this, rook, 3,move.row);
-            makeMove(rookMove, false);
-        }
-        else {
+            Piece rook = getPiece(0, move.row);
+            if (rook != null) {
+                rook.col = 3;
+                rook.row = move.row;
+                rook.x   = 3 * SQUARE_SIZE;
+                rook.y   = move.row * SQUARE_SIZE;
+                rook.isFirstMove = false;
+            }
+        } else {
             Piece rook = getPiece(7, move.row);
-            Move rookMove = new Move(this, rook, 5, move.row);
-            makeMove(rookMove, false);
+            if (rook != null) {
+                rook.col = 5;
+                rook.row = move.row;
+                rook.x   = 5 * SQUARE_SIZE;
+                rook.y   = move.row * SQUARE_SIZE;
+                rook.isFirstMove = false;
+            }
         }
-        colorToMove ^= 1;
     }
 
 
@@ -102,7 +119,7 @@ public class Board extends JPanel {
             squareDiff = -1;
 
         Piece pawn = getPiece(move.newCol, move.newRow + squareDiff);
-
+        move.capture = pawn;
         pieceList.remove(pawn);
     }
 
@@ -113,12 +130,10 @@ public class Board extends JPanel {
 
 
     public Move makeMove(Move move, boolean simulate) {
-        Move undoInfo = new Move(this, move.piece, move.piece.col, move.piece.row);
-        undoInfo.capture = move.capture;
-        undoInfo.oldColorToMove = colorToMove;
+        Move undoInfo = undoInfoForMove(move);
 
         handleFirstMove(move.piece);
-        handleSpecialMoves(move);
+        handleSpecialMoves(move, simulate);
         executeMove(move);
         capture(move);
 
@@ -126,18 +141,60 @@ public class Board extends JPanel {
 
         colorToMove = colorToMove ^ 1;
 
+        if (isEnPassant(move)) {
+            undoInfo.wasEnPassant = true;
+        }
+
         if (!isAIThinking && !simulate)
             aiMove();
+
+
+        return undoInfo;
+    }
+
+    public Move undoInfoForMove(Move move) {
+        Move undoInfo = new Move(this, move.piece, move.piece.col, move.piece.row);
+        if (undoInfo.capture != null)
+            undoInfo.capture = move.capture;
+        undoInfo.oldColorToMove = colorToMove;
+        undoInfo.newRow = move.newRow;
+        undoInfo.newCol = move.newCol;
+
+        undoInfo.firstMove = move.piece.isFirstMove;
+        undoInfo.enPassantEnabled = scanner.enPassantEnable;
+        undoInfo.enPassantCol = scanner.enPassantCol;
+
+        if (isPawnPromotion(move)) {
+            undoInfo.wasPromotion = true;
+        }
+
+        if (move.piece.name.equals("King") && Math.abs(move.col - move.newCol) == 2)
+            undoInfo.wasCastling = true;
+
+        if (isEnPassant(move))
+            undoInfo.wasEnPassant = true;
 
         return undoInfo;
     }
 
     public void undoMove(Move undoInfo) {
+        if (undoInfo.wasPromotion)
+            undoPromotion(undoInfo);
+        if (undoInfo.wasEnPassant) {
+            undoEnPassant(undoInfo);
+        }
+        if (undoInfo.wasCastling)
+            undoCastling(undoInfo);
+
         // Restore piece position
-        undoInfo.piece.col = undoInfo.newCol;
-        undoInfo.piece.row = undoInfo.newRow;
-        undoInfo.piece.x = undoInfo.newCol * SQUARE_SIZE;
-        undoInfo.piece.y = undoInfo.newRow * SQUARE_SIZE;
+        undoInfo.piece.col = undoInfo.col;
+        undoInfo.piece.row = undoInfo.row;
+        undoInfo.piece.x = undoInfo.col * SQUARE_SIZE;
+        undoInfo.piece.y = undoInfo.row * SQUARE_SIZE;
+
+        undoInfo.piece.isFirstMove = undoInfo.firstMove;
+        scanner.enPassantEnable = undoInfo.enPassantEnabled;
+        scanner.enPassantCol = undoInfo.enPassantCol;
 
         // Restore captured piece if any
         if (undoInfo.capture != null) {
@@ -146,6 +203,36 @@ public class Board extends JPanel {
 
         // Restore color to move
         colorToMove = undoInfo.oldColorToMove;
+    }
+
+    public void undoPromotion(Move move) {
+        // remove promoted piece and add back pawn
+        Piece prom = getPiece(move.newCol, move.newRow);
+        pieceList.remove(prom);
+        pieceList.add(new Pawn(this,move.col,move.row,move.piece.color));
+    }
+
+    public void undoEnPassant(Move move) {
+        // Restore captured pawn
+        int squareDiff = (move.piece.color == 0) ? -1 : 1;
+        Piece capturedPawn = new Pawn(this,move.newCol,move.newRow + squareDiff, 1 - move.piece.color);
+        pieceList.add(capturedPawn);
+        //pieceList.add(move.capture);
+    }
+
+    public void undoCastling(Move move) {
+        // Move back rook to corresponding side
+        if (move.piece.col == 2) {
+            Piece rook = getPiece(3,move.row);
+            rook.col = 0;
+            rook.isFirstMove = true;
+        }
+        else {
+            Piece rook = getPiece(5,move.row);
+            rook.col = 7;
+            rook.isFirstMove = true;
+        }
+
     }
 
 
@@ -170,31 +257,34 @@ public class Board extends JPanel {
     }
 
 
-    public void handleSpecialMoves(Move move) {
+    public void handleSpecialMoves(Move move, boolean simulate) {
         // Castling
         if (move.piece.name.equals("King") && Math.abs(move.piece.col - move.newCol) == 2) {
             castling(move);
             return;
         }
 
+        if (isEnPassant(move)) {
+            enPassant(move);
+            scanner.enPassantEnable = false;
+        }
+
         // Setup en passant
-        if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2)
-            scanner.enPassantPossible(move.piece);
+        else if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2)
+            scanner.enPassantPossible(move);
         else
             scanner.enPassantEnable = false;
 
-        if (isEnPassant(move))
-            enPassant(move);
 
         if (isPawnPromotion(move)) {
-            promotion(move);
+            promotion(move, simulate);
         }
     }
 
 
     public boolean isEnPassant(Move move) {
         return (move.piece.name.equals("Pawn") && move.newCol ==
-                scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1);
+                scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1) && scanner.enPassantEnable;
     }
 
 

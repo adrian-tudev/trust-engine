@@ -9,7 +9,8 @@ import static main.Board.pieceList;
 public class Scanner {
     Board board;
     public boolean enPassantEnable = false;
-    public int enPassantCol = -1;
+    public int enPassantCol;
+    public int enPassantRow;
 
     public Scanner(Board board) {
         this.board = board;
@@ -40,9 +41,10 @@ public class Scanner {
         return true;  // only true if no legal moves were found
     }
 
-    public void enPassantPossible(Piece piece) {
+    public void enPassantPossible(Move move) {
         enPassantEnable = true;
-        enPassantCol = piece.col;
+        enPassantCol = move.piece.col;
+        enPassantRow = move.newRow;
     }
 
     public boolean canCastleQueenSide(int color) {

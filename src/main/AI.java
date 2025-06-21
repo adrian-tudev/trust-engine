@@ -67,6 +67,7 @@ public class AI {
         materialScore += board.countPieces(color, "Bishop") * bishopVal;
         materialScore += board.countPieces(color, "Queen") * queenVal;
         materialScore += board.countPieces(color, "Rook") * rookVal;
+        materialScore += board.countPieces(color, "King") * kingVal;
 
         return materialScore;
     }
@@ -81,7 +82,7 @@ public class AI {
         }
 
         Move bestMove = null;
-        int bestScore = Integer.MIN_VALUE + 1;
+        int bestScore = Integer.MIN_VALUE;
 
         for (Move move : validMoves) {
             Move undoInfo = board.makeMove(move, true);
@@ -96,6 +97,8 @@ public class AI {
 
 
         }
+
+        System.out.println("AI finished thinking");
 
         if (bestMove != null) {
             board.makeMove(bestMove, false);
