@@ -18,6 +18,77 @@ public class AI {
     public final int queenVal = 900;
     public final int kingVal = 100000;
 
+    private static final int[][] PAWN_TABLE = {
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {50, 50, 50, 50, 50, 50, 50, 50},
+            {10, 10, 20, 30, 30, 20, 10, 10},
+            {5, 5, 10, 25, 25, 10, 5, 5},
+            {0, 0, 0, 20, 20, 0, 0, 0},
+            {5, -5, -10, 0, 0, -10, -5, 5},
+            {5, 10, 10, -20, -20, 10, 10, 5},
+            {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+
+    // Knight position values
+    private static final int[][] KNIGHT_TABLE = {
+            {-50, -40, -30, -30, -30, -30, -40, -50},
+            {-40, -20, 0, 0, 0, 0, -20, -40},
+            {-30, 0, 10, 15, 15, 10, 0, -30},
+            {-30, 5, 15, 20, 20, 15, 5, -30},
+            {-30, 0, 15, 20, 20, 15, 0, -30},
+            {-30, 5, 10, 15, 15, 10, 5, -30},
+            {-40, -20, 0, 5, 5, 0, -20, -40},
+            {-50, -40, -30, -30, -30, -30, -40, -50}
+    };
+
+    // Bishop position values
+    private static final int[][] BISHOP_TABLE = {
+            {-20, -10, -10, -10, -10, -10, -10, -20},
+            {-10, 0, 0, 0, 0, 0, 0, -10},
+            {-10, 0, 5, 10, 10, 5, 0, -10},
+            {-10, 5, 5, 10, 10, 5, 5, -10},
+            {-10, 0, 10, 10, 10, 10, 0, -10},
+            {-10, 10, 10, 10, 10, 10, 10, -10},
+            {-10, 5, 0, 0, 0, 0, 5, -10},
+            {-20, -10, -10, -10, -10, -10, -10, -20}
+    };
+
+    // Rook position values
+    private static final int[][] ROOK_TABLE = {
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {5, 10, 10, 10, 10, 10, 10, 5},
+            {-5, 0, 0, 0, 0, 0, 0, -5},
+            {-5, 0, 0, 0, 0, 0, 0, -5},
+            {-5, 0, 0, 0, 0, 0, 0, -5},
+            {-5, 0, 0, 0, 0, 0, 0, -5},
+            {-5, 0, 0, 0, 0, 0, 0, -5},
+            {0, 0, 0, 5, 5, 0, 0, 0}
+    };
+
+    // Queen position values
+    private static final int[][] QUEEN_TABLE = {
+            {-20, -10, -10, -5, -5, -10, -10, -20},
+            {-10, 0, 0, 0, 0, 0, 0, -10},
+            {-10, 0, 5, 5, 5, 5, 0, -10},
+            {-5, 0, 5, 5, 5, 5, 0, -5},
+            {0, 0, 5, 5, 5, 5, 0, -5},
+            {-10, 5, 5, 5, 5, 5, 0, -10},
+            {-10, 0, 5, 0, 0, 0, 0, -10},
+            {-20, -10, -10, -5, -5, -10, -10, -20}
+    };
+
+    // King position values (middle game)
+    private static final int[][] KING_TABLE = {
+            {-30, -40, -40, -50, -50, -40, -40, -30},
+            {-30, -40, -40, -50, -50, -40, -40, -30},
+            {-30, -40, -40, -50, -50, -40, -40, -30},
+            {-30, -40, -40, -50, -50, -40, -40, -30},
+            {-20, -30, -30, -40, -40, -30, -30, -20},
+            {-10, -20, -20, -20, -20, -20, -20, -10},
+            {20, 20, 0, 0, 0, 0, 20, 20},
+            {20, 30, 10, 0, 0, 10, 30, 20}
+    };
+
     public AI(Board board) {
         this.board = board;
     }
@@ -55,6 +126,13 @@ public class AI {
         int whiteScore = countMaterial(0);
         int blackScore = countMaterial(1);
 
+        for (Piece piece : pieceList) {
+            int posValue = countPositionalValue(piece);
+            if (piece.color == 0)
+                whiteScore += posValue;
+            else
+                blackScore += posValue;
+        }
         int eval = blackScore - whiteScore;
         return eval;
     }
@@ -70,6 +148,24 @@ public class AI {
         materialScore += board.countPieces(color, "King") * kingVal;
 
         return materialScore;
+    }
+
+    public int countPositionalValue(Piece piece) {
+        int row = piece.row;
+        int col = piece.col;
+
+        if (piece.color == 1)
+            row = 7 - row;
+
+        return switch (piece.name) {
+            case "Pawn" -> PAWN_TABLE[row][col];
+            case "Knight" -> KNIGHT_TABLE[row][col];
+            case "Bishop" -> BISHOP_TABLE[row][col];
+            case "Rook" -> ROOK_TABLE[row][col];
+            case "Queen" -> QUEEN_TABLE[row][col];
+            case "King" -> KING_TABLE[row][col];
+            default -> 0;
+        };
     }
 
     public void makeAIMove() {
@@ -94,7 +190,6 @@ public class AI {
             board.undoMove(undoInfo);
 
             System.out.println("Score: " + score);
-
 
         }
 
@@ -130,5 +225,4 @@ public class AI {
         }
         return validMoves;
     }
-
 }
