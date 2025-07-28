@@ -225,10 +225,12 @@ public class Board extends JPanel {
 
     public void undoCastling(Move move) {
         // Move back rook to corresponding side
-        if (move.piece.col == 2) {
+        if (move.newCol == 2) {
             Piece rook = getPiece(3,move.row);
             if (rook != null) {
                 rook.col = 0;
+                rook.x = rook.col * SQUARE_SIZE;
+                rook.y = rook.row * SQUARE_SIZE;
                 rook.isFirstMove = true;
             }
         }
@@ -236,6 +238,8 @@ public class Board extends JPanel {
             Piece rook = getPiece(5,move.row);
             if (rook != null) {
                 rook.col = 7;
+                rook.x = rook.col * SQUARE_SIZE;
+                rook.y = rook.row * SQUARE_SIZE;
                 rook.isFirstMove = true;
             }
         }
