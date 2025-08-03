@@ -1,5 +1,6 @@
 package main;
 
+import engine.AI;
 import Pieces.*;
 
 import javax.swing.*;
@@ -12,8 +13,9 @@ public class Board extends JPanel {
     public static final int MAX_COLS = 8;
 
     public String FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    public String FENTEST = "r2qk2r/8/8/8/8/8/7p/R3K2R";
-    public String FENPROMOTION = "4k3/8/8/8/8/8/5p/K7";
+    public String FENTEST = "4k3/8/8/8/5p2/8/4N3/K7";
+    public String FENPROMOTION = "4k3/8/8/8/5p2/8/8/K7";
+    public String endGame =  "R7/8/8/8/8/2K5/3p2r1/4k3";
 
     public static ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
@@ -26,7 +28,7 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(FEN);
+        addPieces(endGame);
 
         Input input = new Input(this);
         this.addMouseListener(input);
@@ -49,8 +51,7 @@ public class Board extends JPanel {
 
 
     public void promotion(Move move, boolean simulate) {
-        Piece pawn = getPiece(move.newCol, move.newRow);
-        pieceList.remove(pawn);
+        pieceList.remove(move.piece);
 
         // simple popup choice
         if (simulate || isAIThinking) {

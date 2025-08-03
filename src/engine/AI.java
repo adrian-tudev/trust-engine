@@ -1,19 +1,20 @@
-package main;
+package engine;
 
 import Pieces.Piece;
+import main.Board;
+import main.Move;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import static main.Board.pieceList;
 
 public class AI {
-    public int depth = 3;
+    public int depth = 4;
     Board board;
 
     public final int pawnVal = 100;
-    public final int knightVal = 300;
-    public final int bishopVal = 301;
+    public final int knightVal = 320;
+    public final int bishopVal = 330;
     public final int rookVal = 500;
     public final int queenVal = 900;
     public final int kingVal = 100000;
@@ -86,14 +87,14 @@ public class AI {
             {-20, -30, -30, -40, -40, -30, -30, -20},
             {-10, -20, -20, -20, -20, -20, -20, -10},
             {20, 20, 0, 0, 0, 0, 20, 20},
-            {20, 30, 10, 0, 0, 10, 30, 20}
+            {20, 30, 0, 0, 0, 0, 30, 20}
     };
 
     public AI(Board board) {
         this.board = board;
     }
 
-    public int search(int depth, int alpha, int beta) {
+    public int miniMax(int depth, int alpha, int beta) {
         if (depth == 0) {
             return evaluate();
         }
@@ -103,15 +104,15 @@ public class AI {
         if (moves.isEmpty()) {
             Piece king = board.scanner.findKing(board.colorToMove);
             if (board.scanner.isInCheck(king.col, king.row, board.colorToMove)) {
-                return -99999;
+                return -kingVal - depth;
             } else {
-                return 0;
+                return 0; // Stalemate
             }
         }
 
         for (Move move : moves) {
             Move undoInfo = board.makeMove(move, true);
-            int eval = -search(depth - 1, -beta, -alpha);
+            int eval = -miniMax(depth - 1, -beta, -alpha);
             board.undoMove(undoInfo);
 
             if (eval >= beta)
@@ -133,7 +134,15 @@ public class AI {
             else
                 blackScore += posValue;
         }
-        int eval = blackScore - whiteScore;
+
+        // for endgames
+        int endGameWeight = 32 - pieceList.size();
+        int endgameScore = forceKingCorner(board.colorToMove, endGameWeight);
+
+        int eval = whiteScore - blackScore + endgameScore;
+
+        if (board.colorToMove == 1)
+            return -eval;
         return eval;
     }
 
@@ -168,6 +177,30 @@ public class AI {
         };
     }
 
+    public int forceKingCorner(int color, int endgameWeight) {
+        int evaluation = 0;
+        Piece opponentKing = board.scanner.findKing(color^1);
+        Piece friendlyKing = board.scanner.findKing(color);
+
+        int opponentKingCol = opponentKing.col;
+        int opponentKingRow = opponentKing.row;
+
+        int opponentKingDstToCentreCol = Math.max(3 - opponentKingCol, opponentKingCol - 4);
+        int opponentKingDstToCentreRow = Math.max(3 - opponentKingRow, opponentKingRow - 4);
+        int opponentKingDstFromCentre = opponentKingDstToCentreCol + opponentKingDstToCentreRow;
+        evaluation += opponentKingDstFromCentre * 3;
+
+        int friendlyKingCol = friendlyKing.col;
+        int friendlyKingRow = friendlyKing.row;
+
+        int dstBetweenKingCol = Math.abs(friendlyKingCol - opponentKingCol);
+        int dstBetweenKingRow = Math.abs(friendlyKingRow - opponentKingRow);
+        int dstBetweenKings = dstBetweenKingCol + dstBetweenKingRow;
+        evaluation += 14 - dstBetweenKings;
+
+        return evaluation * endgameWeight;
+    }
+
     public void makeAIMove() {
         System.out.println("AI makeAIMove() called - starting to think...");
 
@@ -182,7 +215,7 @@ public class AI {
 
         for (Move move : validMoves) {
             Move undoInfo = board.makeMove(move, true);
-            int score = search(depth - 1, -Integer.MAX_VALUE, Integer.MAX_VALUE);
+            int score = -miniMax(depth, -Integer.MAX_VALUE, Integer.MAX_VALUE);
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
@@ -192,7 +225,7 @@ public class AI {
             System.out.println("Score: " + score);
 
         }
-
+        System.out.println(bestScore);
         System.out.println("AI finished thinking");
 
         if (bestMove != null) {

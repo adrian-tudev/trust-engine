@@ -16,7 +16,7 @@ public class Move {
     public Piece promotedFrom;
 
     Piece piece;
-    Piece capture;
+    public Piece capture;
 
     public Move(Board board, Piece piece, int newCol, int newRow) {
         col = piece.col;
