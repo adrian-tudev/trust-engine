@@ -28,7 +28,7 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(endGame);
+        addPieces(FEN);
 
         Input input = new Input(this);
         this.addMouseListener(input);

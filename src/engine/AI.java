@@ -11,6 +11,7 @@ import static main.Board.pieceList;
 public class AI {
     public int depth = 4;
     Board board;
+    private MoveGen moveGenerator;
 
     public final int pawnVal = 100;
     public final int knightVal = 320;
@@ -92,6 +93,7 @@ public class AI {
 
     public AI(Board board) {
         this.board = board;
+        this.moveGenerator = new MoveGen(board);
     }
 
     public int miniMax(int depth, int alpha, int beta) {
@@ -234,28 +236,8 @@ public class AI {
             System.out.println("ERROR: No best move found!");
         }
     }
-
     private ArrayList<Move> getAllValidMoves() {
-        ArrayList<Move> validMoves = new ArrayList<>();
+            return moveGenerator.getAllValidMoves();
 
-        ArrayList<Piece> piecesCopy = new ArrayList<>(pieceList);
-
-        // Get all pieces of the current player's color
-        for (Piece piece : piecesCopy) {
-            if (piece.color == board.colorToMove) {
-                // Try all possible squares for each piece
-                for (int row = 0; row < board.MAX_ROWS; row++) {
-                    for (int col = 0; col < board.MAX_COLS; col++) {
-                        Move move = new Move(board, piece, col, row);
-                        move.capture = board.getPiece(col, row);
-
-                        if (board.scanner.isValidMove(move)) {
-                            validMoves.add(move);
-                        }
-                    }
-                }
-            }
-        }
-        return validMoves;
     }
 }
