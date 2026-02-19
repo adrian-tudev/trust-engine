@@ -1,0 +1,12 @@
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Java
+*.class
+*.log
+
+# Maven / Gradle
+target/
+build/
