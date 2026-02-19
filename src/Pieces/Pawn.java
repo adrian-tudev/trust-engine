@@ -24,6 +24,9 @@ public class Pawn extends Piece {
 
     @Override
     public boolean isValidPieceMove(int newCol, int newRow) {
+        // reject off-board destinations
+        if (newRow < 0 || newRow > 7 || newCol < 0 || newCol > 7) return false;
+
         if (this.color == 0)
             squareDiff = -1;
         else
@@ -46,9 +49,11 @@ public class Pawn extends Piece {
             return true;
         }
         // Push pawn 2 squares if first move
-        if (this.isFirstMove && newRow == row + squareDiff * 2 && newCol == this.col
-                && board.getPiece(col, row + squareDiff) == null) {
-            return true;
+        if (this.isFirstMove && newRow == row + squareDiff * 2 && newCol == this.col) {
+            int intermediate = row + squareDiff;
+            if (intermediate < 0 || intermediate > 7) return false;
+            if (board.getPiece(col, intermediate) == null)
+                return true;
         }
         // Diagonal captures
         if (newRow == row + squareDiff) {

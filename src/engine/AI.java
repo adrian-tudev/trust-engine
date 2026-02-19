@@ -168,6 +168,11 @@ public class AI {
         if (piece.color == 1)
             row = 7 - row;
 
+        if (row < 0 || row > 7 || col < 0 || col > 7) {
+            System.err.println("Warning: piece has invalid coordinates: " + piece.name + " color=" + piece.color + " row=" + piece.row + " col=" + piece.col);
+            return 0;
+        }
+
         return switch (piece.name) {
             case "Pawn" -> PAWN_TABLE[row][col];
             case "Knight" -> KNIGHT_TABLE[row][col];
@@ -217,15 +222,12 @@ public class AI {
 
         for (Move move : validMoves) {
             Move undoInfo = board.makeMove(move, true);
-            int score = -miniMax(depth, -Integer.MAX_VALUE, Integer.MAX_VALUE);
+            int score = -miniMax(depth - 1, -Integer.MAX_VALUE, Integer.MAX_VALUE);
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
             }
             board.undoMove(undoInfo);
-
-            System.out.println("Score: " + score);
-
         }
         System.out.println(bestScore);
         System.out.println("AI finished thinking");

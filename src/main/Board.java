@@ -21,6 +21,8 @@ public class Board extends JPanel {
     public Piece selectedPiece;
     public int colorToMove = 0;
     public Scanner scanner = new Scanner(this);
+    public int lastSquareMoveFrom;
+    public int lastSquareMoveTo;
 
     AI ai = new AI(this);
 
@@ -28,7 +30,7 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(FEN);
+        addPieces(endGame);
 
         Input input = new Input(this);
         this.addMouseListener(input);

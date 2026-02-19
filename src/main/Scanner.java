@@ -116,7 +116,7 @@ public class Scanner {
     }
 
     // schizo solutions but works
-    private boolean wouldBeInCheck(Move move) {
+    public boolean wouldBeInCheck(Move move) {
         int oldCol = move.piece.col;
         int oldRow = move.piece.row;
         Piece capturedPiece = board.getPiece(move.newCol, move.newRow);

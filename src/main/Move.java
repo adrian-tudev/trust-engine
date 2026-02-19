@@ -3,8 +3,8 @@ package main;
 import Pieces.Piece;
 
 public class Move {
-    int col, row;
-    int newCol, newRow;
+    public int col, row;
+    public int newCol, newRow;
     public int oldColorToMove;
     public boolean enPassantEnabled;
     public int enPassantCol;
@@ -15,7 +15,7 @@ public class Move {
     public boolean wasPromotion;
     public Piece promotedFrom;
 
-    Piece piece;
+    public Piece piece;
     public Piece capture;
 
     public Move(Board board, Piece piece, int newCol, int newRow) {

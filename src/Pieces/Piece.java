@@ -19,11 +19,34 @@ public class Piece {
 
     public BufferedImage getImage(String imagePath) {
         BufferedImage image = null;
-        try {
-            image = ImageIO.read(getClass().getResourceAsStream(imagePath));
+        java.io.InputStream is = getClass().getResourceAsStream(imagePath);
+        if (is == null) {
+            System.err.println("Resource not found: " + imagePath);
+            image = new BufferedImage(Board.SQUARE_SIZE, Board.SQUARE_SIZE, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = image.createGraphics();
+            g.setColor(Color.MAGENTA);
+            g.fillRect(0, 0, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+            g.setColor(Color.BLACK);
+            g.drawString("?", Board.SQUARE_SIZE/2, Board.SQUARE_SIZE/2);
+            g.dispose();
+            return image;
         }
-        catch(IOException e) {
+
+        try {
+            image = ImageIO.read(is);
+            if (image == null) {
+                image = new BufferedImage(Board.SQUARE_SIZE, Board.SQUARE_SIZE, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = image.createGraphics();
+                g.setColor(Color.MAGENTA);
+                g.fillRect(0, 0, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+                g.setColor(Color.BLACK);
+                g.drawString("?", Board.SQUARE_SIZE/2, Board.SQUARE_SIZE/2);
+                g.dispose();
+            }
+        }
+        catch(IOException | IllegalArgumentException e) {
            e.printStackTrace();
+           image = new BufferedImage(Board.SQUARE_SIZE, Board.SQUARE_SIZE, BufferedImage.TYPE_INT_ARGB);
         }
         return image;
     }

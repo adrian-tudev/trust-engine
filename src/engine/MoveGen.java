@@ -4,7 +4,6 @@ import Pieces.Piece;
 import main.Board;
 import main.Move;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import static main.Board.pieceList;
@@ -58,8 +57,11 @@ public class MoveGen {
         if (nr >= 0 && nr < 8 && board.getPiece(piece.col, nr) == null) {
             addMoveIfValid(piece, piece.col, nr, validMoves);
 
-            if (piece.isFirstMove && board.getPiece(piece.col, nr + forward) == null)
-                addMoveIfValid(piece, piece.col, nr + forward, validMoves);
+            if (piece.isFirstMove) {
+                int nr2 = nr + forward;
+                if (nr2 >= 0 && nr2 < 8 && board.getPiece(piece.col, nr2) == null)
+                    addMoveIfValid(piece, piece.col, nr2, validMoves);
+            }
         }
     }
 
@@ -126,7 +128,38 @@ public class MoveGen {
 
         if (board.scanner.isValidMove(move)) {
             validMoves.add(move);
-
         }
+    }
+
+    private String debugWhyMoveInvalid(Move move) {
+        // Check each validation step from Scanner.isValidMove() in order:
+
+        // 1. Check team collision
+        if (board.checkTeam(move.piece, move.capture)) {
+            return "Cannot capture own piece";
+        }
+
+        // 2. Check if it's the right player's turn
+        if (!(move.piece.color == board.colorToMove)) {
+            return "Not this piece's turn to move (colorToMove=" + board.colorToMove +
+                    ", piece.color=" + move.piece.color + ")";
+        }
+
+        // 3. Check if the piece can legally move to that square
+        if (!(move.piece.isValidPieceMove(move.newCol, move.newRow))) {
+            return "Piece cannot move to that square (violates piece movement rules)";
+        }
+
+        // 4. Check for collision/blocking
+        if (move.piece.checkForCollision(move.newCol, move.newRow)) {
+            return "Path is blocked by another piece";
+        }
+
+        // 5. Check if move would leave king in check
+        if (board.scanner.wouldBeInCheck(move)) {
+            return "Move would leave own king in check";
+        }
+
+        return "Unknown reason (shouldn't reach here)";
     }
 }
