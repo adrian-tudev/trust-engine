@@ -6,16 +6,21 @@ import Pieces.*;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Board extends JPanel {
     public static final int SQUARE_SIZE = 60;
     public static final int MAX_ROWS = 8;
     public static final int MAX_COLS = 8;
 
-    public String FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    public String CLASSIC = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     public String FENTEST = "4k3/8/8/8/5p2/8/4N3/K7";
     public String FENPROMOTION = "4k3/8/8/8/5p2/8/8/K7";
     public String endGame =  "R7/8/8/8/8/2K5/3p2r1/4k3";
+    public String repetition = "8/8/8/8/8/2N5/4K3/3k4";
+
+    public String FEN = "";
 
     public static ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
@@ -28,9 +33,22 @@ public class Board extends JPanel {
 
     public boolean isAIThinking = false;
 
+    // Map for threefold repetition: FEN string -> count of occurrences
+    public Map<String, Integer> repetitionMap = new HashMap<>();
+    public boolean threefold = false;
+
 
     public Board() {
-        addPieces(endGame);
+        addPieces(repetition);
+
+        // initialize full FEN
+        String initCastlingRights = computeCastlingString();
+        String initEnPassant = "-";
+
+        FEN = generateFEN(initEnPassant, initCastlingRights);
+
+        // add first position to repetition map
+        repetitionMap.put(FEN, 1);
 
         Input input = new Input(this);
         this.addMouseListener(input);
@@ -132,6 +150,9 @@ public class Board extends JPanel {
 
 
     public Move makeMove(Move move, boolean simulate) {
+        if (threefold)
+            return null;
+
         Move undoInfo = undoInfoForMove(move);
 
         handleFirstMove(move.piece);
@@ -145,6 +166,8 @@ public class Board extends JPanel {
 
         if (!isAIThinking && !simulate)
             aiMove();
+
+        updateFEN(move, simulate);
 
 
         return undoInfo;
@@ -327,6 +350,7 @@ public class Board extends JPanel {
 
 
     public boolean isValidMove(Move move) {
+        if (threefold) return false;
         return scanner.isValidMove(move);
     }
 
@@ -387,6 +411,106 @@ public class Board extends JPanel {
         }
     }
 
+    // FEN helper to compute castling rights
+    private String computeCastlingString() {
+
+        StringBuilder sb = new StringBuilder();
+
+        // White king castling rights
+        Piece whiteKing = getPiece(4, 7);
+        if (whiteKing != null && "King".equals(whiteKing.name) && whiteKing.isFirstMove) {
+            Piece whiteRookA = getPiece(0, 7);
+            if (whiteRookA != null && "Rook".equals(whiteRookA.name) && whiteRookA.isFirstMove) 
+                sb.append('K');
+            Piece whiteRookH = getPiece(7, 7);
+            if (whiteRookH != null && "Rook".equals(whiteRookH.name) && whiteRookH.isFirstMove) 
+                sb.append('Q');
+        }
+
+        Piece blackKing = getPiece(4, 0);
+        if (blackKing != null && "King".equals(blackKing.name) && blackKing.isFirstMove) {
+            Piece blackRookA = getPiece(0, 0);
+            if (blackRookA != null && "Rook".equals(blackRookA.name) && blackRookA.isFirstMove)
+                sb.append('k');
+            Piece blackRookH = getPiece(7, 0);
+            if (blackRookH != null && "Rook".equals(blackRookH.name) && blackRookH.isFirstMove) {
+                sb.append('q');
+            }
+        }
+        return sb.length() == 0 ? "-" : sb.toString();
+    }
+
+
+    private String computeEnPassantTarget(int color) {
+        if (!scanner.enPassantEnable)
+            return "-";
+        int EnPassantRow = (color == 0) ? 5 : 2;
+        char file = (char) ('a' + scanner.enPassantCol);
+        int rank = 8 - EnPassantRow;
+        return "" + file + rank;
+    }
+
+
+    public String generateFEN(String enPassantTarget, String castlingRights) {
+        StringBuilder fen = new StringBuilder();
+        for (int row = 0; row < MAX_ROWS; row++) {
+            int emptyCount = 0;
+            for (int col = 0; col < MAX_COLS; col++) {
+                Piece piece = getPiece(col, row);
+                if (piece == null) {
+                    emptyCount++;
+                } else {
+                    if (emptyCount > 0) {
+                        fen.append(emptyCount);
+                        emptyCount = 0;
+                    }
+                    char pieceChar = switch (piece.name) {
+                        case "Rook" -> 'r';
+                        case "Knight" -> 'n';
+                        case "Bishop" -> 'b';
+                        case "Queen" -> 'q';
+                        case "King" -> 'k';
+                        case "Pawn" -> 'p';
+                        default -> '?';
+                    };
+                    fen.append(piece.color == 0 ? Character.toUpperCase(pieceChar) : pieceChar);
+                }
+            }
+            if (emptyCount > 0) {
+                fen.append(emptyCount);
+            }
+            if (row < MAX_ROWS - 1) {
+                fen.append('/');
+            }
+        }
+        fen.append(" ").append(colorToMove == 0 ? "w" : "b");
+
+        // Castling rights and en passant target square
+        fen.append (" ").append(castlingRights == null ? "-" : castlingRights);
+        fen.append(" ").append(enPassantTarget == null ? "-" : enPassantTarget);
+        fen.append(" 0 1"); // Placeholder for castling and en passant
+        return fen.toString();
+    }
+
+    public void updateFEN(Move move, boolean simulate) {
+        if (simulate)
+            return;
+
+        // Compute castling rights and en passant target square based on the move
+        String castlingRights = computeCastlingString();
+        String enPassantTarget = computeEnPassantTarget(move.piece.color);
+        FEN = generateFEN(enPassantTarget, castlingRights);
+        updateRepetitionMap(FEN);
+    }
+
+    public void updateRepetitionMap(String FEN) {
+        int count = repetitionMap.getOrDefault(FEN, 0) + 1;
+        repetitionMap.put(FEN, count);
+        if (count >= 3) {
+            threefold = true;
+        }
+    }
+
 
     @Override
     public void paintComponent(Graphics graphics) {
@@ -422,6 +546,12 @@ public class Board extends JPanel {
             graphics.setColor(Color.BLACK);
             graphics.setFont(new Font("Arial", Font.BOLD, 50));
             graphics.drawString(((colorToMove == 0) ? "Black" : "White" ) + " wins!", 100, MAX_ROWS * SQUARE_SIZE / 2);
+        }
+
+        if (threefold) {
+            graphics.setColor(Color.BLACK);
+            graphics.setFont(new Font("Arial", Font.BOLD, 50));
+            graphics.drawString("Draw by repetition", 20, MAX_ROWS * SQUARE_SIZE / 2);
         }
 
     }
