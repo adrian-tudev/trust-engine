@@ -88,7 +88,7 @@ public class AI {
             {-20, -30, -30, -40, -40, -30, -30, -20},
             {-10, -20, -20, -20, -20, -20, -20, -10},
             {20, 20, 0, 0, 0, 0, 20, 20},
-            {20, 30, 0, 0, 0, 0, 30, 20}
+            {20, 50, 0, 0, 0, 0, 50, 20}
     };
 
     public AI(Board board) {
@@ -187,7 +187,7 @@ public class AI {
     public int forceKingCorner(int color, int endgameWeight) {
         int evaluation = 0;
         Piece opponentKing = board.scanner.findKing(color^1);
-        Piece friendlyKing = board.scanner.findKing(color);
+        Piece ownKing = board.scanner.findKing(color);
 
         int opponentKingCol = opponentKing.col;
         int opponentKingRow = opponentKing.row;
@@ -195,17 +195,22 @@ public class AI {
         int opponentKingDstToCentreCol = Math.max(3 - opponentKingCol, opponentKingCol - 4);
         int opponentKingDstToCentreRow = Math.max(3 - opponentKingRow, opponentKingRow - 4);
         int opponentKingDstFromCentre = opponentKingDstToCentreCol + opponentKingDstToCentreRow;
-        evaluation += opponentKingDstFromCentre * 3;
+        evaluation += (int) (opponentKingDstFromCentre * 3.5);
 
-        int friendlyKingCol = friendlyKing.col;
-        int friendlyKingRow = friendlyKing.row;
+        int friendlyKingCol = ownKing.col;
+        int friendlyKingRow = ownKing.row;
 
         int dstBetweenKingCol = Math.abs(friendlyKingCol - opponentKingCol);
         int dstBetweenKingRow = Math.abs(friendlyKingRow - opponentKingRow);
         int dstBetweenKings = dstBetweenKingCol + dstBetweenKingRow;
         evaluation += 14 - dstBetweenKings;
 
-        return evaluation * endgameWeight;
+        int endgameEval = evaluation * endgameWeight;
+
+        if (color == 1)
+            return -(endgameEval);
+
+        return endgameEval;
     }
 
     public void makeAIMove() {
