@@ -161,6 +161,21 @@ public class AI {
         return materialScore;
     }
 
+    public int convertPieceToMaterial(Piece piece) {
+        return switch (piece.name) {
+            case "Pawn" -> pawnVal;
+            case "Knight" -> knightVal;
+            case "Bishop" -> bishopVal;
+            case "Rook" -> rookVal;
+            case "Queen" -> queenVal;
+            case "King" -> kingVal;
+            default -> {
+                System.err.println("Warning: unknown piece type: " + piece.name);
+                yield 0;
+            }
+        };
+    }
+
     public int countPositionalValue(Piece piece) {
         int row = piece.row;
         int col = piece.col;
@@ -243,8 +258,20 @@ public class AI {
             System.out.println("ERROR: No best move found!");
         }
     }
-    private ArrayList<Move> getAllValidMoves() {
-            return moveGenerator.getAllValidMoves();
 
+
+    private ArrayList<Move> getAllValidMoves() {
+        ArrayList<Move> moves = moveGenerator.getAllValidMoves();
+
+        moves.sort((a, b) -> Integer.compare(getMoveScore(b) - getMoveScore(a), 0));
+
+        return moves;
+    }
+
+    private int getMoveScore(Move move) {
+        int score = 0;
+        if (move.capture != null) score += convertPieceToMaterial(move.capture) * 1000;
+        if (move.wasPromotion) score += 9000;
+        return score;
     }
 }
