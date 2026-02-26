@@ -263,7 +263,7 @@ public class AI {
     private ArrayList<Move> getAllValidMoves() {
         ArrayList<Move> moves = moveGenerator.getAllValidMoves();
 
-        moves.sort((a, b) -> Integer.compare(getMoveScore(b) - getMoveScore(a), 0));
+        moves.sort((a, b) -> Integer.compare(getMoveScore(b), getMoveScore(a)));
 
         return moves;
     }

@@ -39,7 +39,7 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(repetition);
+        addPieces(CLASSIC);
 
         // initialize full FEN
         String initCastlingRights = computeCastlingString();
