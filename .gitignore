@@ -10,3 +10,5 @@ out/
 # Maven / Gradle
 target/
 build/
+
+.editorconfig

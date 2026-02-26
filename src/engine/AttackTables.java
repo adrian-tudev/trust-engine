@@ -10,49 +10,21 @@ public class AttackTables {
     public static final int[] QUEEN_DIRECTIONS = {8, -8, 1, -1, -9, -7, 7, 9};
 
     public static long[] whitePawnAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++)
-            whitePawnAttacks[i] = calculateWhitePawnAttacks(i);
-    }
-
     public static long[] blackPawnAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++)
-            blackPawnAttacks[i] = calculateBlackPawnAttacks(i);
-    }
-
-
     public static long[] bishopAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++) {
-            bishopAttacks[i] = calculateSlidingAttacks(i, BISHOP_DIRECTIONS);
-        }
-    }
-
     public static long[] rookAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++) {
-            rookAttacks[i] = calculateSlidingAttacks(i, ROOK_DIRECTIONS);
-        }
-    }
-
     public static long[] knightAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++) {
-            knightAttacks[i] = calculateKnightAttacks(i);
-        }
-    }
-
     public static long[] kingAttacks = new long[64];
-    static {
-        for (int i = 0; i < 64; i++) {
-            kingAttacks[i] = calculateKingAttacks(i);
-        }
-    }
-
     public static long[] queenAttacks = new long[64];
+
     static {
         for (int i = 0; i < 64; i++) {
+            whitePawnAttacks[i] = calculateWhitePawnAttacks(i);
+            blackPawnAttacks[i] = calculateBlackPawnAttacks(i);
+            bishopAttacks[i] = calculateSlidingAttacks(i, BISHOP_DIRECTIONS);
+            rookAttacks[i] = calculateSlidingAttacks(i, ROOK_DIRECTIONS);
+            knightAttacks[i] = calculateKnightAttacks(i);
+            kingAttacks[i] = calculateKingAttacks(i);
             queenAttacks[i] = calculateSlidingAttacks(i, QUEEN_DIRECTIONS);
         }
     }
