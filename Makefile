@@ -17,7 +17,7 @@ JAVA_RELEASE ?= 21
 
 JAVA_SOURCES := $(shell find $(SRC_DIR) -name '*.java')
 
-.PHONY: all compile jar run run-jar clean help
+.PHONY: all compile jar run run-jar perft clean help
 
 all: jar
 
@@ -42,6 +42,9 @@ run: compile
 run-jar: jar
 	$(JAVA) -jar "$(JAR)"
 
+perft: compile
+	$(JAVA) -cp "$(CLASSES_DIR)" tests.Perft
+
 clean:
 	rm -rf "$(BUILD_DIR)"
 
@@ -53,6 +56,7 @@ help:
 		"  make jar        Build runnable jar at $(JAR)" \
 		"  make run        Run from class files" \
 		"  make run-jar    Run the jar" \
+		"  make perft      Run perft tests" \
 		"  make clean      Remove build output" \
 		"" \
 		"Vars (override like: make jar JAVA_RELEASE=17):" \
