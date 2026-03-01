@@ -6,18 +6,11 @@ import engine.MoveGen;
 import main.Board;
 import main.Move;
 
-/*
-
-PERFT results are compared against the results on:
-https://www.chessprogramming.org/Perft_Results
-
-Currently only supports the starting FEN position.
-
-*/
-
+// Currently only supports the starting FEN position.
 public class Perft {
 
-    // Expected perft values for starting position (from chessprogramming.org)
+    // Expected perft values for starting position 
+    // from https://www.chessprogramming.org/Perft_Results
     private static long[] EXPECTED = {
         1L,
         20L,
@@ -35,13 +28,14 @@ public class Perft {
         System.out.println("│ Depth │     Result   │   Expected   │ Status  │  Time   │");
         System.out.println("├───────┼──────────────┼──────────────┼─────────┼─────────┤");
 
-        Board board = new Board();
         int passed = 0;
         int maxDepth = Math.min(6, EXPECTED.length - 1);
 
         for (int depth = 0; depth <= maxDepth; depth++) {
+            Board board = new Board();
+            MoveGen moveGen = new MoveGen(board);
             long startTime = System.currentTimeMillis();
-            long result = perft(depth, board, new MoveGen(board));
+            long result = perft(depth, board, moveGen);
             long elapsed = System.currentTimeMillis() - startTime;
 
             long expected = EXPECTED[depth];
