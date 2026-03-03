@@ -121,6 +121,14 @@ public class Scanner {
         int oldRow = move.piece.row;
         Piece capturedPiece = board.getPiece(move.newCol, move.newRow);
 
+        // For en passant, the captured pawn is not on the destination square
+        Piece epCaptured = null;
+        if (board.isEnPassant(move)) {
+            int squareDiff = move.piece.color == 0 ? 1 : -1;
+            epCaptured = board.getPiece(move.newCol, move.newRow + squareDiff);
+            if (epCaptured != null) pieceList.remove(epCaptured);
+        }
+
         move.piece.col = move.newCol;
         move.piece.row = move.newRow;
         if (capturedPiece != null) pieceList.remove(capturedPiece);
@@ -131,6 +139,7 @@ public class Scanner {
         move.piece.col = oldCol;
         move.piece.row = oldRow;
         if (capturedPiece != null) pieceList.add(capturedPiece);
+        if (epCaptured != null) pieceList.add(epCaptured);
 
         return inCheck;
     }

@@ -93,8 +93,6 @@ public class Board extends JPanel {
             Piece promotedPiece = createPromotedPiece(choice, move.newCol, move.newRow, move.piece.color);
             pieceList.add(promotedPiece);
         }
-
-
     }
 
 
@@ -195,6 +193,7 @@ public class Board extends JPanel {
         undoInfo.firstMove = move.piece.isFirstMove;
         undoInfo.enPassantEnabled = scanner.enPassantEnable;
         undoInfo.enPassantCol = scanner.enPassantCol;
+        undoInfo.enPassantRow = scanner.enPassantRow;
 
         if (isPawnPromotion(move)) {
             undoInfo.wasPromotion = true;
@@ -225,9 +224,10 @@ public class Board extends JPanel {
         undoInfo.piece.isFirstMove = undoInfo.firstMove;
         scanner.enPassantEnable = undoInfo.enPassantEnabled;
         scanner.enPassantCol = undoInfo.enPassantCol;
+        scanner.enPassantRow = undoInfo.enPassantRow;
 
-        // Restore captured piece if any
-        if (undoInfo.capture != null) {
+        // Restore captured piece if any (skip for en passant - already handled above)
+        if (undoInfo.capture != null && !undoInfo.wasEnPassant) {
             pieceList.add(undoInfo.capture);
         }
 
@@ -298,6 +298,7 @@ public class Board extends JPanel {
         // Castling
         if (move.piece.name.equals("King") && Math.abs(move.col - move.newCol) == 2) {
             castling(move);
+            scanner.enPassantEnable = false;
             return;
         }
 
@@ -307,7 +308,7 @@ public class Board extends JPanel {
         }
 
         // Setup en passant
-        else if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2)
+        else if (move.piece.name.equals("Pawn") && Math.abs(move.row - move.newRow) == 2)
             scanner.enPassantPossible(move);
         else
             scanner.enPassantEnable = false;
@@ -320,8 +321,17 @@ public class Board extends JPanel {
 
 
     public boolean isEnPassant(Move move) {
-        return (move.piece.name.equals("Pawn") && move.newCol ==
-                scanner.enPassantCol && Math.abs(move.piece.col - move.newCol) == 1) && scanner.enPassantEnable;
+        if (!scanner.enPassantEnable) return false;
+        if (!move.piece.name.equals("Pawn")) return false;
+        if (Math.abs(move.col - move.newCol) != 1) return false;
+        if (move.newCol != scanner.enPassantCol) return false;
+
+        // White pawn on rank 3 capturing to rank 2, or black pawn on rank 4 capturing to rank 5
+        if (move.piece.color == 0) {
+            return move.row == 3 && move.newRow == 2;
+        } else {
+            return move.row == 4 && move.newRow == 5;
+        }
     }
 
 

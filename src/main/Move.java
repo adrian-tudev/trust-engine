@@ -8,6 +8,7 @@ public class Move {
     public int oldColorToMove;
     public boolean enPassantEnabled;
     public int enPassantCol;
+    public int enPassantRow;
     public boolean firstMove;
 
     public boolean wasCastling;
