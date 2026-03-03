@@ -22,35 +22,47 @@ public class Perft {
     };
 
     public static void main(String args[]) {
+        String fen = args.length > 0
+            ? String.join(" ", args)
+            : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
         System.out.println("┌─────────────────────────────────────────────────────────┐");
         System.out.println("│                    PERFT TEST SUITE                     │");
+        System.out.printf ("│ FEN: %-51s │%n", fen.length() > 51 ? fen.substring(0, 48) + "..." : fen);
         System.out.println("├───────┬──────────────┬──────────────┬─────────┬─────────┤");
         System.out.println("│ Depth │     Result   │   Expected   │ Status  │  Time   │");
         System.out.println("├───────┼──────────────┼──────────────┼─────────┼─────────┤");
 
         int passed = 0;
         int maxDepth = Math.min(6, EXPECTED.length - 1);
+        boolean customFen = args.length > 0;
 
         for (int depth = 0; depth <= maxDepth; depth++) {
-            Board board = new Board();
+            Board board = new Board(fen);
             MoveGen moveGen = new MoveGen(board);
             long startTime = System.currentTimeMillis();
             long result = perft(depth, board, moveGen);
             long elapsed = System.currentTimeMillis() - startTime;
 
-            long expected = EXPECTED[depth];
-            boolean correct = result == expected;
-            if (correct) passed++;
-
-            String status = correct ? "PASS" : "FAIL";
             String timeStr = elapsed < 1000 ? elapsed + "ms" : String.format("%.2fs", elapsed / 1000.0);
 
-            System.out.printf("│ %5d │ %12d │ %12d │  %s   │ %7s │%n",
-                depth, result, expected, status, timeStr);
+            if (customFen) {
+                System.out.printf("│ %5d │ %12d │ %12s │  %-5s │ %7s │%n",
+                    depth, result, "N/A", "N/A", timeStr);
+            } else {
+                long expected = EXPECTED[depth];
+                boolean correct = result == expected;
+                if (correct) passed++;
+                String status = correct ? "PASS" : "FAIL";
+                System.out.printf("│ %5d │ %12d │ %12d │  %s   │ %7s │%n",
+                    depth, result, expected, status, timeStr);
+            }
         }
 
         System.out.println("└───────┴──────────────┴──────────────┴─────────┴─────────┘");
-        System.out.printf("%nResults: %d/%d tests passed%n", passed, maxDepth + 1);
+        if (!customFen) {
+            System.out.printf("%nResults: %d/%d tests passed%n", passed, maxDepth + 1);
+        }
     }
 
     private static long perft(int depth, Board board, MoveGen moveGen) {

@@ -39,15 +39,33 @@ public class Board extends JPanel {
 
 
     public Board() {
-        addPieces(CLASSIC);
+        this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    }
 
-        // initialize full FEN
-        String initCastlingRights = computeCastlingString();
-        String initEnPassant = "-";
 
-        FEN = generateFEN(initEnPassant, initCastlingRights);
+    public Board(String fullFEN) {
+        String[] parts = fullFEN.split(" ");
 
-        // add first position to repetition map
+        // Parse piece placement (field 1)
+        addPieces(parts[0]);
+
+        // Parse active color (field 2)
+        if (parts.length > 1) {
+            colorToMove = parts[1].equals("b") ? 1 : 0;
+        }
+
+        // Parse castling rights (field 3) and update piece isFirstMove flags
+        String castlingRights = parts.length > 2 ? parts[2] : "-";
+        applyCastlingRights(castlingRights);
+
+        // Parse en passant target (field 4)
+        String enPassantTarget = parts.length > 3 ? parts[3] : "-";
+        applyEnPassantTarget(enPassantTarget);
+
+        // Store the full FEN via generateFEN
+        FEN = generateFEN(enPassantTarget, castlingRights);
+
+        // Add first position to repetition map
         repetitionMap.put(FEN, 1);
 
         Input input = new Input(this);
@@ -420,6 +438,58 @@ public class Board extends JPanel {
             }
         }
     }
+
+    // Apply castling rights from FEN by setting piece isFirstMove flags
+    private void applyCastlingRights(String castling) {
+        // Revoke all castling rights first
+        for (Piece piece : pieceList) {
+            if (piece.name.equals("King") || piece.name.equals("Rook")) {
+                piece.isFirstMove = false;
+            }
+        }
+        if (castling.equals("-")) return;
+        Piece whiteKing = getPiece(4, 7);
+        if (castling.contains("K")) {
+            Piece rook = getPiece(7, 7);
+            if (whiteKing != null) whiteKing.isFirstMove = true;
+            if (rook != null) rook.isFirstMove = true;
+        }
+        if (castling.contains("Q")) {
+            Piece rook = getPiece(0, 7);
+            if (whiteKing != null) whiteKing.isFirstMove = true;
+            if (rook != null) rook.isFirstMove = true;
+        }
+        Piece blackKing = getPiece(4, 0);
+        if (castling.contains("k")) {
+            Piece rook = getPiece(7, 0);
+            if (blackKing != null) blackKing.isFirstMove = true;
+            if (rook != null) rook.isFirstMove = true;
+        }
+        if (castling.contains("q")) {
+            Piece rook = getPiece(0, 0);
+            if (blackKing != null) blackKing.isFirstMove = true;
+            if (rook != null) rook.isFirstMove = true;
+        }
+    }
+
+
+    // Apply en passant target square from FEN by configuring the scanner
+    private void applyEnPassantTarget(String enPassantTarget) {
+        if (enPassantTarget == null || enPassantTarget.equals("-")) {
+            scanner.enPassantEnable = false;
+            return;
+        }
+        int col = enPassantTarget.charAt(0) - 'a';
+        int rank = Character.getNumericValue(enPassantTarget.charAt(1));
+        int targetRow = 8 - rank;
+        // rank 3 = white pawn just double-moved; it sits at targetRow-1 (one row above target)
+        // rank 6 = black pawn just double-moved; it sits at targetRow+1 (one row below target)
+        int pawnRow = (rank == 3) ? targetRow - 1 : targetRow + 1;
+        scanner.enPassantEnable = true;
+        scanner.enPassantCol = col;
+        scanner.enPassantRow = pawnRow;
+    }
+
 
     // FEN helper to compute castling rights
     private String computeCastlingString() {
